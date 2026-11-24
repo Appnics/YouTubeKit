@@ -24,13 +24,7 @@ class Extraction {
     }
     
     
-    /// Allows to override player id in case we have a (currently) unsolvable in the future
-    private static let PLAYER_ID_OVERRIDE: String? = nil
     private static let PLAYER_STS_OVERRIDE: Int? = nil
-    /// Variant every player is fetched as, like yt-dlp's default (`tv` since 2026.11.23).
-    /// The page's own variant (e.g. `player_ias`, `player_ias_tcl`) can be unsolvable: as of player
-    /// b485e332 the `player_ias*` variants throw `a.addOnDisposeCallback is not a function` in the solver.
-    private static let PLAYER_JS_VARIANT_PATH = "/tv-player-ias.vflset/tv-player-ias.js"
 
     /// Get the base JavaScript url
     class func jsURL(html: String) throws -> String {
@@ -44,7 +38,10 @@ class Extraction {
            let prefix = groupMatches[1]?.content,
            let playerID = groupMatches[2]?.content,
            let _ = groupMatches[3]?.content {
-            let fixedURL = prefix + (PLAYER_ID_OVERRIDE ?? playerID) + PLAYER_JS_VARIANT_PATH
+            // The variant and the player ID come from `PlayerJSConfiguration.current` (Appnics fork),
+            // validated there, so the file is always under youtube.com/s/player/.
+            let config = PlayerJSConfiguration.current
+            let fixedURL = prefix + (config.playerIDOverride ?? playerID) + "/" + config.variantPath
             guard let normalizedURL = URL(string: fixedURL, relativeTo: URL(string: "https://youtube.com"))?.absoluteURL else {
                 throw YouTubeKitError.regexMatchError
             }

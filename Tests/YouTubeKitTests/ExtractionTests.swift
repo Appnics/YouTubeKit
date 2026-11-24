@@ -90,6 +90,24 @@ final class ExtractionTests: XCTestCase {
         XCTAssertEqual(jsURL, "https://youtube.com/s/player/6c5cb4f4/tv-player-ias.vflset/tv-player-ias.js")
     }
 
+    func testJSURLUsesTheConfiguredVariantAndPlayerID() throws {
+        let html = #"var ytplayer = {"config":{"assets":{"js":"/s/player/6c5cb4f4/player_ias.vflset/en_US/base.js"}}};"#
+        defer { PlayerJSConfiguration.current = PlayerJSConfiguration() }
+        PlayerJSConfiguration.current = PlayerJSConfiguration(variantPath: "player_ias.vflset/en_US/base.js")
+        XCTAssertEqual(try Extraction.jsURL(html: html), "https://youtube.com/s/player/6c5cb4f4/player_ias.vflset/en_US/base.js")
+        PlayerJSConfiguration.current = PlayerJSConfiguration(playerIDOverride: "abc123")
+        XCTAssertEqual(try Extraction.jsURL(html: html), "https://youtube.com/s/player/abc123/tv-player-ias.vflset/tv-player-ias.js")
+    }
+
+    func testInvalidConfigurationFallsBackToTheDefault() throws {
+        let html = #"var ytplayer = {"config":{"assets":{"js":"/s/player/6c5cb4f4/player_ias.vflset/en_US/base.js"}}};"#
+        defer { PlayerJSConfiguration.current = PlayerJSConfiguration() }
+        for path in ["../x.js", "/abs.js", "https://evil.example/x.js", "a//b.js", "a/b.txt", "a..b.js", "x.js?y", String(repeating: "a", count: 98) + ".js"] {
+            PlayerJSConfiguration.current = PlayerJSConfiguration(variantPath: path, playerIDOverride: "a/b")
+            XCTAssertEqual(try Extraction.jsURL(html: html), "https://youtube.com/s/player/6c5cb4f4/tv-player-ias.vflset/tv-player-ias.js", path)
+        }
+    }
+
     func testSignatureTimestampUsesExtractedValue() throws {
         let js = "signatureTimestamp:20515"
         let signatureTimestamp = Extraction.extractSignatureTimestamp(fromJS: js)
