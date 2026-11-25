@@ -93,18 +93,24 @@ final class ExtractionTests: XCTestCase {
     func testJSURLUsesTheConfiguredVariantAndPlayerID() throws {
         let html = #"var ytplayer = {"config":{"assets":{"js":"/s/player/6c5cb4f4/player_ias.vflset/en_US/base.js"}}};"#
         defer { PlayerJSConfiguration.current = PlayerJSConfiguration() }
-        PlayerJSConfiguration.current = PlayerJSConfiguration(variantPath: "player_ias.vflset/en_US/base.js")
+        PlayerJSConfiguration.current = PlayerJSConfiguration(variantPath: "player_ias_tce.vflset/en_US/base.js")
+        XCTAssertEqual(try Extraction.jsURL(html: html), "https://youtube.com/s/player/6c5cb4f4/player_ias_tce.vflset/en_US/base.js")
+        PlayerJSConfiguration.current = PlayerJSConfiguration(playerIDOverride: "abc-123_x")
+        XCTAssertEqual(try Extraction.jsURL(html: html), "https://youtube.com/s/player/abc-123_x/tv-player-ias.vflset/tv-player-ias.js")
+        // page: the page's own variant
+        PlayerJSConfiguration.current = PlayerJSConfiguration(variantPath: nil)
         XCTAssertEqual(try Extraction.jsURL(html: html), "https://youtube.com/s/player/6c5cb4f4/player_ias.vflset/en_US/base.js")
-        PlayerJSConfiguration.current = PlayerJSConfiguration(playerIDOverride: "abc123")
-        XCTAssertEqual(try Extraction.jsURL(html: html), "https://youtube.com/s/player/abc123/tv-player-ias.vflset/tv-player-ias.js")
     }
 
     func testInvalidConfigurationFallsBackToTheDefault() throws {
         let html = #"var ytplayer = {"config":{"assets":{"js":"/s/player/6c5cb4f4/player_ias.vflset/en_US/base.js"}}};"#
         defer { PlayerJSConfiguration.current = PlayerJSConfiguration() }
-        for path in ["../x.js", "/abs.js", "https://evil.example/x.js", "a//b.js", "a/b.txt", "a..b.js", "x.js?y", String(repeating: "a", count: 98) + ".js"] {
+        for path in ["../x.js", "/abs.js", "https://evil.example/x.js", "a//b.js", "a/b.txt", "x.js?y", "a/b/c/d/e.js", "./x.js", "a/../b.js"] {
             PlayerJSConfiguration.current = PlayerJSConfiguration(variantPath: path, playerIDOverride: "a/b")
             XCTAssertEqual(try Extraction.jsURL(html: html), "https://youtube.com/s/player/6c5cb4f4/tv-player-ias.vflset/tv-player-ias.js", path)
+        }
+        for id in ["abc", String(repeating: "a", count: 17), "a.b.c.d.e"] {
+            XCTAssertFalse(PlayerJSConfiguration.isValidPlayerID(id), id)
         }
     }
 

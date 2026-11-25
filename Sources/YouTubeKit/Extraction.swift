@@ -37,11 +37,12 @@ class Extraction {
         if let (_, groupMatches) = playerIDPattern.firstMatch(in: baseURL, includingGroups: [1, 2, 3]),
            let prefix = groupMatches[1]?.content,
            let playerID = groupMatches[2]?.content,
-           let _ = groupMatches[3]?.content {
+           let pageSuffix = groupMatches[3]?.content {
             // The variant and the player ID come from `PlayerJSConfiguration.current` (Appnics fork),
-            // validated there, so the file is always under youtube.com/s/player/.
+            // validated there, so the file is always under youtube.com/s/player/. No variant: the page's own.
             let config = PlayerJSConfiguration.current
-            let fixedURL = prefix + (config.playerIDOverride ?? playerID) + "/" + config.variantPath
+            let suffix = config.variantPath.map { "/" + $0 } ?? pageSuffix
+            let fixedURL = prefix + (config.playerIDOverride ?? playerID) + suffix
             guard let normalizedURL = URL(string: fixedURL, relativeTo: URL(string: "https://youtube.com"))?.absoluteURL else {
                 throw YouTubeKitError.regexMatchError
             }
