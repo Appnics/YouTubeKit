@@ -109,7 +109,8 @@ final class ExtractionTests: XCTestCase {
             PlayerJSConfiguration.current = PlayerJSConfiguration(variantPath: path, playerIDOverride: "a/b")
             XCTAssertEqual(try Extraction.jsURL(html: html), "https://youtube.com/s/player/6c5cb4f4/tv-player-ias.vflset/tv-player-ias.js", path)
         }
-        for id in ["abc", String(repeating: "a", count: 17), "a.b.c.d.e"] {
+        XCTAssertFalse(PlayerJSConfiguration.isValidVariantPath("a\n/b.js"))
+        for id in ["abc", String(repeating: "a", count: 17), "a.b.c.d.e", "abcdef\n"] {
             XCTAssertFalse(PlayerJSConfiguration.isValidPlayerID(id), id)
         }
     }

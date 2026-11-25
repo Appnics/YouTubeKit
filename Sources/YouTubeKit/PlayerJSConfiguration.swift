@@ -55,13 +55,13 @@ public struct PlayerJSConfiguration: Sendable, Equatable {
         guard (1...4).contains(segments.count), path.hasSuffix(".js"), path.count <= 200 else { return false }
         return segments.allSatisfy { segment in
             segment != "." && segment != ".."
-                && segment.range(of: #"^[A-Za-z0-9_.-]+$"#, options: .regularExpression) != nil
+                && segment.range(of: #"^[A-Za-z0-9_.-]+\z"#, options: .regularExpression) != nil
         }
     }
 
-    /// `^[A-Za-z0-9_-]{6,16}$`.
+    /// `^[A-Za-z0-9_-]{6,16}$`, with no trailing newline (`\z`, not ICU's `$`).
     public static func isValidPlayerID(_ id: String) -> Bool {
-        id.range(of: #"^[A-Za-z0-9_-]{6,16}$"#, options: .regularExpression) != nil
+        id.range(of: #"^[A-Za-z0-9_-]{6,16}\z"#, options: .regularExpression) != nil
     }
 
     private static let lock = NSLock()
